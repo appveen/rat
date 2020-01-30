@@ -1,79 +1,104 @@
 # ReST API Tester - R.A.T #
 
-> this readme is WIP
-
 Writing test cases and automating them are fairly time consuming activities. RAT aims to eliminate the pain of automating REST API test cases.
 
-In itself, RAT is not a new framework. It's a simple code generator that generates [mocha](https://mochajs.org) test cases from a simple JSON file.
+In itself, RAT is not a new framework. It's a simple code generator that generates [mocha](https://mochajs.org) test cases from a simple JSON file. RAT uses [request](https://github.com/request/request) for API calls and [chai-expect](https://www.chaijs.com/guide/styles/#expect) as the assertion library
+
+> Current version of RAT **ONLY** supports **JSON** request and response vaidations.
+
+# Table of contents
+
+1. [Installation](#Installation)
+2. [CLI Options](#CLI-Options)
+3. [Setting up](#Setting-up)
+    * [Folder structure](#Folder-structure)
+4. [Writing test cases](#Writing-test-cases)
+    * [Test Suit](#Test-Suit)
+    * [Test Case](#Test-Case)
+    * [Request object](#Request-object)
+    * [Response object](#Response-object)
+5. [Smart substituitions](#Smart-substituitions)
+    * [Globals](#Globals)
+    * [Data-pipes](#Data-pipes)
 
 # Installation
 `npm i -g @appveen/rat`
 
-# Usage
+# CLI Options
 
-`# rat [options] [file ...]`
+`rat [options] [file ...]`
 
 The available options are,
 
-* `i, init`: Creates all the required folders and initializes it with a sample test case.
-* `u, upgrade`: Upgrades the modules required to run RAT.
-* `g, generate`: Generates scripts for all the files under tests folder.
-* `g, generate [file ...]`: Generate the script for only the specifed test file.
-* `r, run`: Run all the tests.
-* `r, run [file ...]`: Run the specific test.
-* `demo`: Starts the demo server.
+* `-i, --init`: Initialize the currect folder as a RAT test case location.
+* `--ui`: Start RAT in interactive mode on the CLI. This is the default behavior.
+* `-u,--upgrade`: Upgrades the RAT setup in the current folder.
+* `-g, --generate [file ...]`: Generates mocha scripts for all the files under the _tests_ folder or for the files specified.
+* `-r, --run [file ...]`: Run all the tests under the _generatedTests_ folder or the tests specified.
+* `--stopOnError`: Stop at the first failure while running tests
+* `--har [file]`:  Generates RAT test case from a HAR file.
+* `--clean`: Displays the instructions to clean RAT setup from a folder.
+* `--demo`: Starts the demo server. This is primarily used for demoing RAT.
+* `-v, --version`: Displays the version of RAT
+
+# Setting up
+
+To set up a folder for running RAT tests, run the following commands from the command line.
+
+`rat -i`
+
+When `rat` is initialized for the first time, a set of sample test cases are provided under the _tests_ folder. 
+
+## Folder structure
+
+Once initialised the following folders are created.
+
+| Name | Description |
+|--|--|
+| _generatedTests_ | Contains the generated test cases. |
+| _lib_ | JSON Files that are referenced by the test cases. |
+| _modules_ | Files that define JS methods |
+| _tests_ | Testcase JSON files which are used to generate the testcase  under _generatedTests_. |
 
 # Writing test cases
 
 Test cases are bundles as a test suite and each test suite is written as a JSON file. 
 
-Once you initialize `rat` the following folders are created for you.
-
-* _generatedTests_: Contains the generated test cases.
-* _lib_: Files that are referred by the test cases.
-* _logs_: Logs generated while running test cases.
-* _tests_: Test cases that are written in _rat_ format and used to generate the test cases under _generatedTests_.
-
-When `rat` is initialized for the first time a sample test case is provided under the _tests_ folder. The structure of the _test suit_ is as shown below.
-
 ## Test Suit
 
-* Each file should only have only one test suite section.
+* Each file is treated as a test suite or a collection of tests.
 
 | Option | Type |Desctiprion |
 |---|---|---|
 | `testName` | String | _Required_. Name of the test case |
 | `url` | List | _Required_. A list of URLs that will be used in this test suite |
+| `modules` | List | The list of module files from _modules_ directory that is being used in the test cases. |
 | `globals` | List | A list of global variables that would be used in the test cases. Global varaibles are used to pass data between test cases. |
 | `tests` | Array | Tests is an array of objects. Each object in the array is test case.  |
 
-Sample test suite file,
+Sample test casefile,
 
 ```json
 {
     "testName": "Sample API Tests",
-    "url": [
-        "http://localhost:8080",
-        "http://localhost:8081"
-    ],
-    "globals": [
-        "loginResponse",
-        "data"
-    ],
+    "url": [ "http://localhost:8080" ],
+    "modules": [ "sampleFunction" ],
+    "globals": [ "loginResponse", "data" ],
     "tests": []
 }
 ```
 
 ## Test Case
 
-| Option | Type |Desctiprion |
+| Attribute | Type | Desctiprion |
 |---|---|---|
-| `endpoint` | Number | _Required_. This denotes the position of the URL in the list of `url` that was defined in the test suite section. The list starts with **1**. Example, if `url` was defined as `url:["http://localhost:8080", "http://localhost:8081"]`, then `endpoint:1` points to the first URL, `http://localhost:8080` |
+| `endpoint` | Number | _Required_. This denotes the URL in the list of `url` that was defined in the test suite section. The list starts with **1**. Example, if `url` was defined as `url:["http://localhost:8080", "http://localhost:8081"]`, then `endpoint:1` points to the first URL, `http://localhost:8080` |
 | `name` | String | Name of the test case. This would appear in the summary. |
-| `continueOnError` | Boolean | Default: `false`. If set to `true`, then the test execution will stop if this step fails. |
+| `delimiters` | List | The delimiters that should be used for patten substituitions. The default delimiters are `{{` and `}}`| 
+| `wait` | Number | The number of seconds to wait before continuing to the next text. | 
+| `continueOnError` | Boolean | Default: `false`. If set to `true`, then the test execution will not stop if this step fails. |
 | `request` | Object | _Required_. The request definition. |
 | `response` | Object | The response data that would be used to validate the API response. |
-| `saveResponse` | String | The name of the variable where the response from the server has to be captured. This should be a member of `globals` array.|
 
 Sample test case
 
@@ -81,78 +106,93 @@ Sample test case
 {
     "endpoint": "1",
     "name": "Login - Valid",
-    "request": {
-        "method": "POST",
-        "url": "/login",
-        "payload": {
-            "username": "alice",
-            "password": "password"
-        },
-        "responseCode": 200,
-        "saveResponse": "loginResponse"
-    },
-    "response": {
-        "body": {
-            "token": null
-        }
-    }
+    "delimiters": ["{{", "}}"],
+    "continueOnError": false,
+    "wait": 2,
+    "request": {},
+    "response": {}
 }
 ```
 
 ## Request object
 
+| Attribute | Type | Desctiprion |
+|---|---|---|
+| `method` | String | _Required_. One of the HTTP methods - POST, PUT, GET, DELETE, PATCH |
+| `url` | String | _Required_. A uri under test.
+| `headers` | JSON | A set of headers that should be sent along with the request.
+| `qs` | JSON | A set of query strings that should be set on the URL.
+| `responseCode` | Number | The HTTP status code that is expected from the response.
+| `payload` | JSON | The JSON payload that should be sent with the request.
+| `payloadFile` | String | The name of the JSON file under `lib` folder to be used as payload. 
+| `saveResponse` | String | One of the entries from `globals`. This will be used to save the output of the request so that it can used in any of the subsequent test cases. If the value is not in `globals`, then no error is raised, but might cause downstream test cases to fail. |
+
+N.B.
+> If the JSON payload is big, then it is a good practice to save the file under `lib` and reference the file in the test.
+
+> If both `payload` and `payloadFile` is provided, then `payload` takes precedence.
+
+e.g.
+
 ```json
 {
-  "method": "String. One of the HTTP methods - POST, PUT, GET, DELETE, PATCH",
-  "url": "Array. List of URLs that will be used",
-  "headers": "Object. Headers to be sent as part of the request",
-  "payload": "Object. Data to be send when the method is POST or PUT",
-  "payloadFile": "String. Name of the file from 'lib' folder to use",
-  "responseCode": "Number. HTTP status code expected",
-  "saveResponse": "String. The variable where the output of this request has to be captured. This variable must exist in globals array."
+  "method": "GET",
+  "url": "/api/a/sm/service",
+  "qs": {
+    "select": "name domain port",
+    "filter": {
+      "app": "jerry",
+      "name": {
+          "$in": ["Test-Relation-Root","Test-Relation-Child" ]
+          }
+    }
+  },
+  "headers": {
+    "Authorization": "JWT <% loginResponse.token %>"
+  },
+  "responseCode": 200,
+  "saveResponse": "fetchAllEntity"
 }
 ```
 
-__method__: _Required_. One of POST/PUT/GET/DELETE. In the generated code [supertest](https://github.com/visionmedia/supertest) is used to make HTTP requests.
-
-__url__: _optional_. Any URI that has to be appended to the _endpoint_ specified under the test case.
-
-__headers__: _optional_. A set of http header. If not set, no headers are send.
-
-__payload__: _optional_. Request body for PATCH, POST and PUT requests. If not set, then `{}` is send by default.
-
-__payloadFile__: _optional_. The name of the file under _lib_ folder that has the request body for PATCH, POST and PUT requests. If not set, then `{}` is send by default.
-
-> __N.B.__ if both `payload` and `payloadFile` is provided, then `payload` takes precedence.
-
-__responseCode__: _optional_. The HTTP status code that is _expected_ from the request. If not set, _no validations_ are done against the HTTP status code.
-
-__saveResponse__: _optional_. One of the entries from _globals_. This will be used to save the output of the request so that it can used in any of the subsequent test cases. If the value is not in _globals_, then no error is raised, but might cause downstream test cases to fail.
-
 ## Response object
 
-An optional response object. This response object is used to validate the response from the API. If no response object is provided, then no response validation is done.
+An optional response object can be defined for a testcase. This response object is used to validate the response from the API. If no response object is provided, then no response validation is done.
 
-In the current version of `rat` only JSON responses are validated.
+| Attribute | Type | Desctiprion |
+|---|---|---|
+| `headers` | JSON | Response headers to be validated |
+| `body` | JSON or Array | Response body will be validated against this. Arrays are order sensitive for comparison. |
+| `bodyFile` | String | A file from `lib` that can be used to validate the response body |
+
+e.g.
 
 ```json
 {
-  "headers": "<response headers to be validated>",
-  "body": "<object or array. response body will be validated against this>",
-  "bodyFile": "<a file from 'lib' that can be used to validate the response body>"
+  "body": {
+      "message": "Login error!"
+  }
 }
 ```
 
 # Smart substituitions
 
-## URL
+Smart substituitions allows you to specify dynamic payload.
 
-At the begining of the test suite we used `urls` to define a list od endpoints that 
+## Globals
 
-# Sample
+The value from a global variable can be used in the test case by enclosing it with in the delimiters.
 
-* Start the RAT demo server in a separate terminal - `rat demo`
-* Create a RAT test case folder - `rat init` . This would have generated a sample folder structure with a sample test case.
-* Generate the test case - `rat generate`
-* Run the test case - `rat run`
+```json
+"headers": {"token": "<% loginResponse.token %>"}
+```
 
+The delimiters for the above example are `<%` and `%>`.
+
+## Data-pipes
+
+This allows you to use the output data of a previously run test case in the current test case.
+
+```json
+"url": "/data/{{dataPipe['sampleTest01.json'].data._id}}",
+```

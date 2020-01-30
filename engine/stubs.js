@@ -12,7 +12,6 @@ e.initTestSuite = function(_suitName, _url) {
     _tc += "var expect = require('chai').expect;var assert = require('chai').assert;";
     _url.forEach((_url, _i) => {
         _tc += "var url" + (_i + 1) + " = process.env.URL1 ? process.env.URL1 : '" + _url + "';";
-        _tc += "var api" + (_i + 1) + " = require('supertest')(url" + (_i + 1) + ");"
     });
     _tc += "describe('" + _suitName + "', function () {";
 };
@@ -125,8 +124,8 @@ function generateAssertionsForJson(_p, _d) {
     }
 };
 
-function generateAssertions(_d) {
-    let path = "res.body"
+function generateAssertions(_d, _locationOfResponse) {
+    let path = `res.${_locationOfResponse}`
     if (whatIsThis(_d) == 1) generateAssertionsForJson(path, _d);
     if (whatIsThis(_d) == 2) generateAssertionsForArray(path, _d);
     if (whatIsThis(_d) == 3) {
@@ -184,7 +183,6 @@ e.test = function(tcFile, tc) {
     var endpoint = tc.endpoint;
     var expectedResponseHeaders = response && response.headers ? response.headers : null;
     _tc += "it('" + name + "', function (done) {";
-    _tc += "try{";
     _tc += "logger.info('Title: " + name + "');";
     if (tc.wait) {
         _tc += "this.timeout(" + (tc.wait * 1000 + 500) + ");";
@@ -196,52 +194,58 @@ e.test = function(tcFile, tc) {
         _tc += "logger.info('Changing default timeout for this testcase to " + (timeout) + " seconds');";
     }
 
-    if (request.method == "POST") {
-        _tc += "let _payload = {};"
-        if (request.payload) _tc += "_payload = " + parseData(JSON.stringify(request.payload)) + ";";
-        else if (request.payloadFile) _tc += "_payload = " + parseData(cli.readFile("lib/" + request.payloadFile)) + ";";
-        _tc += "api" + endpoint + ".post(\"" + parseData(request.url) + "\")";
-        _tc += ".send(_payload)";
+    let headers = {}
+    if (request.headers) headers = request.headers;
+
+    let body = false;
+    if (request.payload) {
+    	body = true;
+    	_tc += "var _payload = " + parseData(JSON.stringify(request.payload)) + ";";
+    }
+    else if (request.payloadFile) {
+    	body = true;
+    	_tc += "var _payload = " + parseData(cli.readFile("lib/" + request.payloadFile)) + ";";
     }
 
-    if (request.method == "GET") _tc += "api" + endpoint + ".get(\"" + parseData(request.url) + "\")";
-
-    if (request.method == "PUT") {
-        _tc += "let _payload = {};"
-        if (request.payload) _tc += "_payload = " + parseData(JSON.stringify(request.payload)) + ";";
-        else if (request.payloadFile) _tc += "_payload = " + parseData(cli.readFile("lib/" + request.payloadFile)) + ";";
-        _tc += "api" + endpoint + ".put(\"" + parseData(request.url) + "\")";
-        _tc += ".send(_payload)";
+    _tc += `logger.info("Request METHOD :: ${request.method}");`
+    _tc += `logger.info("Request URL :: " + url${tc.endpoint} + "${parseData(request.url)}");`
+    _tc += `logger.info("Request HEADERS :: " + JSON.stringify(${parseData(JSON.stringify(headers))}));`
+    
+    let qs = null;
+    if(request.qs){
+    	qs = request.qs
+    	for(let k in qs){
+    		if(whatIsThis(qs[k]) == 1 ) qs[k] = JSON.stringify(qs[k])
+    		if(whatIsThis(qs[k]) == 2 ) qs[k] = qs[k].join(",")
+    	}
     }
 
-    if (request.method == "DELETE") _tc += "api" + endpoint + ".delete(\"" + parseData(request.url) + "\")";
+    if(body) _tc += `logger.info("Request BODY :: " + JSON.stringify(_payload));`
 
-    if (request.headers) {
-        for (var k in request.headers) {
-            let val = request.headers[k];
-            if (val.indexOf(delimiters[0]) > -1) val = render(val);
-            else val = "\"" + val + "\"";
-            _tc += ".set(\"" + k + "\"," + val + ")";
-        }
-    }
+    _tc += `request({`
+    _tc += `"method": "${request.method}",`
+    _tc += `"url": url${tc.endpoint} + "${parseData(request.url)}",`
+    _tc += `"headers": ${parseData(JSON.stringify(headers))},`
+    if(body) _tc += `"body": _payload,`
+    if(qs) _tc += `"qs": ${parseData(JSON.stringify(qs))},`
+    _tc += `"json": true,`
+    _tc += `"resolveWithFullResponse": true`
+    _tc +=`})`
 
-    // if (request.responseCode) _tc += ".expect(" + request.responseCode + ")";
-
-    _tc += ".end(function (err, res) {";
-    _tc += "logger.info('Request');";
-    _tc += "logger.info('Request METHOD :: ' + '" + request.method + "');";
-    _tc += "logger.info('Request URL :: ' + \"" + parseData(request.url) + "\");";
-    if (request.headers) _tc += "logger.info('Request HEADER :: ' + '" + JSON.stringify(request.headers) + "');";
-    if (request.method == "PUT" || request.method == "POST") _tc += "logger.info('Request DATA :: ' +  JSON.stringify(_payload) );";
+    let locationOfResponse = "body"
+    if(request.responseCode < 400) _tc +=`.then(res => {`
+    else {
+    	locationOfResponse = "error"
+    	_tc +=`.then(res => {}, res => {`
+  	}
     _tc += "logger.info('Response STATUS :: ' + res.statusCode);";
     _tc += "logger.info('Response HEADER :: ' + JSON.stringify(res.headers));";
-    _tc += "logger.info('Response BODY :: ' + JSON.stringify(res.body));";
-    _tc += "expect(err).to.be.null;";
-    _tc += "try{"
-    _tc += "expect(res.status, JSON.stringify(res.body)).to.equal(" + request.responseCode + ");";
+    _tc += `logger.info('Response BODY :: ' + JSON.stringify(res.${locationOfResponse}));`;
+    _tc += `try{`
+    _tc += `expect(res.statusCode, JSON.stringify(res.${locationOfResponse})).to.equal(${request.responseCode});`
     if (request.saveResponse) {
-        _tc += request.saveResponse + " = res.body;";
-        _tc += `dataPipe["${tcFile}"]["${request.saveResponse}"] = res.body; fs.writeFileSync(dataFile, JSON.stringify(dataPipe));`
+        _tc += `${request.saveResponse} = res.${locationOfResponse};`;
+        _tc += `dataPipe["${tcFile}"]["${request.saveResponse}"] = res.${locationOfResponse}; fs.writeFileSync(dataFile, JSON.stringify(dataPipe));`
     }
     if (expectedResponseHeaders) {
         for (var _header in expectedResponseHeaders)
@@ -250,18 +254,14 @@ e.test = function(tcFile, tc) {
     }
     if (response && (response.body || response.bodyFile)) {
         var expectedResponse = "";
-
         if (response.body) expectedResponse = response.body;
         else if (response.bodyFile) expectedResponse = JSON.parse(cli.readFile("lib/" + response.bodyFile));
-
         _tc += "expect(res.body).to.be.not.null;";
-
-        generateAssertions(expectedResponse);
-
-        if (response.list) _tc += "let check = checkInList(res.body, " + JSON.stringify(response.list) + ");expect(check, \"Check data in list failed!\").to.be.equal(true);"
+        generateAssertions(expectedResponse, locationOfResponse);
+        if (response.list) _tc += `let check = checkInList(res.${locationOfResponse}, ${JSON.stringify(response.list)});expect(check, "Check data in list failed!").to.be.equal(true);`
     }
-    // wait or waitFor
     if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
+    // wait or waitFor
     else if (tc.waitFor) {
         let timeout = 10;
         if (tc.waitFor.timeout) timeout = tc.waitFor.timeout;
@@ -289,14 +289,13 @@ e.test = function(tcFile, tc) {
         _tc += "'" + tc.waitFor.value + "',d";
         _tc += ").then(() => {logger.info('" + name + " :: PASS'); done();}, ()=> assert.equal(1,0,'waitForInAPI :: FAIL!'));"
     } else _tc += "logger.info('" + name + " :: PASS'); done();";
-
     _tc += "}catch (_err){logger.error(_err.message);";
     _tc += "logger.info('" + name + " :: FAIL');";
     if (!tc.continueOnError) _tc += "assert.fail(_err.actual, _err.expected, _err.message);";
-    _tc += "done();};});";
-    _tc += "}catch (_err){logger.error(_err.message);";
+    _tc += "done();};})";// END THEN()
+    _tc += ".catch(_err => {logger.error(_err.message);";
     if (!tc.continueOnError) _tc += "assert.fail(0,1, _err.message);";
-    _tc += "done();}});";
+    _tc += "done();});});";
 };
 
 e.generate = function(_f, _stopOnError) {

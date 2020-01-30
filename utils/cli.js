@@ -32,11 +32,13 @@ e.usage = () => {
 
 e.init = () => {
     console.log("Initializing folder...");
-    var sampleTestCase = fs.readFileSync(__dirname + "/../testCases/sample.json");
+    var sampleTestCase01 = fs.readFileSync(__dirname + "/../testCases/01sample.json");
+    var sampleTestCase02 = fs.readFileSync(__dirname + "/../testCases/02sample.json");
     var samplePayload = fs.readFileSync(__dirname + "/../testCases/payload.json");
     var sampleResonse = fs.readFileSync(__dirname + "/../testCases/response.json");
     var sampleModule = fs.readFileSync(__dirname + "/../testCases/sampleFunction.js");
-    let testFileName = path.join(process.cwd(), "tests", "sample.json");
+    let testFileName01 = path.join(process.cwd(), "tests", "sampleTest01.json");
+    let testFileName02 = path.join(process.cwd(), "tests", "sampleTest02.json");
     let requestFileName = path.join(process.cwd(), "lib", "sampleRequestPayload.json");
     let responseFileName = path.join(process.cwd(), "lib", "sampleResponsePayload.json");
     let moduleFileName = path.join(process.cwd(), "modules", "sampleFunction.js");
@@ -52,10 +54,11 @@ e.init = () => {
     if (!fs.existsSync("generatedTests")) fs.mkdirSync("generatedTests");
     if (!fs.existsSync("tests")) {
         fs.mkdirSync("tests");
-        fs.writeFileSync(testFileName, sampleTestCase.toString());
+        fs.writeFileSync(testFileName01, sampleTestCase01.toString());
+        fs.writeFileSync(testFileName02, sampleTestCase02.toString());
     }
     new buffer.Buffer(execSync("npm init -y"));
-    new buffer.Buffer(execSync("npm i log4js chai mocha supertest request request-promise faker"));
+    new buffer.Buffer(execSync("npm i log4js chai mocha request request-promise faker"));
     console.log("Done!");
     process.exit();
 };
@@ -70,7 +73,7 @@ e.upgrade = () => {
     fs.unlinkSync("package.json")
     fs.unlinkSync("package-lock.json")
     new buffer.Buffer(execSync("npm init -y"));
-    new buffer.Buffer(execSync("npm i log4js chai mocha supertest request request-promise faker"));
+    new buffer.Buffer(execSync("npm i log4js chai mocha request request-promise faker"));
     console.log("Done!");
     process.exit();
 };

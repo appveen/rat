@@ -14,7 +14,7 @@ program
     .option('-u,--upgrade', 'Upgrade the current setup of RAT')
     .option('--clean', 'Clean up')
     .option('--ui', 'Start in UI mode.')
-    .option('--har [file]', 'Generates RAT test case from HAR file export')
+    .option('--har [file]', 'Generates RAT test case from HAR file')
     .option('-g,--generate [file]', 'Generates scripts for all the files under tests folder')
     .option('-r,--run [file]', 'Run all the tests')
     .option('--stopOnError', 'Stop at the first failure while running tests')
