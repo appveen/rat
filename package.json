@@ -9,10 +9,11 @@
     "author": "Jerry M. <jerry@appveen.com>",
     "license": "MIT",
     "dependencies": {
-        "body-parser": "^1.18.3",
         "commander": "^2.19.0",
         "express": "^4.16.4",
         "inquirer": "^6.2.0",
+        "mongoose": "^5.8.10",
+        "mongoose-express-middleware": "^1.1.0",
         "rimraf": "^2.6.3"
     },
     "bin": {
