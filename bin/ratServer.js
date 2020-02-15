@@ -6,12 +6,15 @@ let port = process.env.PORT || 8080
 let mongoConnectionURL = process.env.MONGO_URL || "mongodb://localhost:27017"
 let mongoDBName = process.env.MONGO_DB || "rat"
 
+let config = require("../lib/config")
+let logger = config.initLogger()
+
 let testcase_router = require("../routers/testcase.router")
 let module_router = require("../routers/module.router")
 let library_router = require("../routers/library.router")
 
 app.use(express.json())
-
+app.use(config.apiLogger)
 app.use("/api/testcase", testcase_router);
 app.use("/api/library", library_router);
 app.use("/api/module", module_router);
@@ -24,11 +27,11 @@ Mongoose.connect(mongoConnectionURL, {
     dbName: mongoDBName
 }, err => {
     if (err) {
-        console.error(err)
+        logger.error(err)
     } else {
-        console.log(`Connected to ${mongoDBName} db`)
+        logger.info(`Connected to ${mongoDBName} db`)
         app.listen(port, () => {
-            console.log("Server started on port " + port)
+            logger.info("Server started on port " + port)
         })
     }
 })

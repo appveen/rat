@@ -2,7 +2,7 @@ const MongooseExpressMiddleware = require("mongoose-express-middleware")
 const express = require('express');
 const router = express.Router();
 
-let schema = require("../lib/library.schema")
+let schema = require("../schema/library.schema")
 
 var libraryCrud = new MongooseExpressMiddleware("library", schema, null)
 
