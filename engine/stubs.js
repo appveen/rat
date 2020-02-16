@@ -245,7 +245,7 @@ e.test = function(tcFile, tc) {
     _tc += `expect(res.statusCode, JSON.stringify(res.${locationOfResponse})).to.equal(${request.responseCode});`
     if (request.saveResponse) {
         _tc += `${request.saveResponse} = res.${locationOfResponse};`;
-        _tc += `dataPipe["${tcFile}"]["${request.saveResponse}"] = res.${locationOfResponse}; fs.writeFileSync(dataFile, JSON.stringify(dataPipe));`
+        _tc += `dataPipe.save("${request.saveResponse}",res.${locationOfResponse});`
     }
     if (expectedResponseHeaders) {
         for (var _header in expectedResponseHeaders)
@@ -293,7 +293,11 @@ e.test = function(tcFile, tc) {
     _tc += "logger.info('" + name + " :: FAIL');";
     if (!tc.continueOnError) _tc += "assert.fail(_err.actual, _err.expected, _err.message);";
     _tc += "done();};})";// END THEN()
-    _tc += ".catch(_err => {logger.error(_err.message);";
+    _tc += ".catch(_err => {";
+    _tc += "logger.info('ERROR Response STATUS :: ' + _err.statusCode);";
+		_tc += "logger.info('ERROR Response HEADERS :: ' + JSON.stringify(_err.headers));";
+		_tc += "logger.info('ERROR Response BODY :: ' + JSON.stringify(_err.body));";
+    _tc += "logger.error(_err.message);";
     if (!tc.continueOnError) _tc += "assert.fail(0,1, _err.message);";
     _tc += "done();});});";
 };
@@ -303,10 +307,12 @@ e.generate = function(_f, _stopOnError) {
     let opt = path.join(process.cwd(), "generatedTests", suffix);
     var opf = "generatedTests/" + suffix;
     let tc = "const log4js = require('log4js'); const request = require('request-promise'); const faker = require('faker');";
-    tc += " const fs = require('fs'); const path = require('path');"
-    tc += "const dataFileName = 'data.json'; let dataPipe = {}; let dataFile = path.join(process.cwd(), dataFileName);if(!fs.existsSync(dataFile)) fs.writeFileSync(dataFile, '{}'); dataPipe = JSON.parse(fs.readFileSync(dataFile).toString());"
+    tc += "const fs = require('fs'); const path = require('path');"
+    tc += "if (!fs.existsSync('data')) fs.mkdirSync('data'); "
     tc += "function getDateTime() {var sd = new Date();var syear = sd.getFullYear();var smonth = ('0' + (sd.getMonth() + 1)).slice(-2);var sdate = ('0' + sd.getDate()).slice(-2);var shours = ('0' + sd.getHours()).slice(-2);var sminutes = ('0' + sd.getMinutes()).slice(-2);var sseconds = ('0' + sd.getSeconds()).slice(-2);var startDate = syear + '-' + smonth + '-' + sdate;var startTime = shours + '-' + sminutes + '-' + sseconds;return startDate + '_' + startTime;}; function waitForInAPI(_option, _key, _value, _till){if(_till > (new Date())){return request(_option).then(_d => {if (JSON.parse(_d)[_key] == _value) return true;else {return new Promise(_resolve => {setTimeout(()=> _resolve(waitForInAPI(_option, _key, _value, _till)),500);});}}, _e => {return false});} else return false;}; function checkInList(_list, _values) {let flag = false;_list.forEach(_e => {let innerFlag = true;for (_k in _values) {innerFlag = innerFlag && (_e[_k] == _values[_k]);};if (innerFlag) flag = true;});return flag;}; log4js.configure({ appenders: { file: { type: 'file', filename: 'Log_'+getDateTime()+'_" + _f + ".log' } }, categories: { default: { appenders: ['file'], level: 'info' } }});const logger = log4js.getLogger('[" + _f + "]');";
-    tc += `if(!dataPipe['${_f}']) dataPipe['${_f}'] = {};` + _tc
+    tc += `const dataFile = path.join('.', 'data', "${_f}");logger.info('dataFile :: ' + dataFile);`
+    tc += "let dataPipe = {init: (_dataFile) => fs.writeFileSync(dataFile, '{}'),save: (_key, _data) => {data = JSON.parse(fs.readFileSync(dataFile).toString());data[_key] = _data;fs.writeFileSync(dataFile, JSON.stringify(data));},read: _dataFile => {let f = path.join('.', 'data', _dataFile);logger.info('Reading data from ' + f);return JSON.parse(fs.readFileSync(f).toString());}};"
+    tc += `dataPipe.init();` + _tc
     fs.writeFileSync(opf, tc);
     return opf;
 };

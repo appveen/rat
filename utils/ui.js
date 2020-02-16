@@ -1,4 +1,5 @@
 const inquirer = require('inquirer');
+inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 const fs = require('fs');
 const gen = require('../engine/generator');
 
@@ -24,11 +25,14 @@ function run() {
         if (_f && fs.existsSync(fileName + _f)) fileList.push(_f.replace(".js", ""));
     });
     inquirer.prompt([{
-            type: 'list',
+            type: 'autocomplete',
             name: 'tcName',
             message: 'Run> ',
-            pageSize: 10,
-            choices: fileList
+            pageSize: 15,
+		        source: (_ans, _input) => {
+		          _input = _input || '';
+		          return new Promise(_res => _res(fileList.filter(_n => _n.toLowerCase().indexOf(_input) > -1)));
+		      	}
         },
         { type: 'confirm', name: 'stopOnError', message: 'Stop on error?', default: true }
     ]).then(_d => {
@@ -49,11 +53,14 @@ function generate() {
         if (_f && fs.existsSync(fileName + _f)) fileList.push(_f.replace(".json", ""));
     });
     inquirer.prompt([{
-        type: 'list',
+        type: 'autocomplete',
         name: 'tcName',
         message: 'Generate > ',
-        pageSize: 10,
-        choices: fileList
+        pageSize: 15,
+        source: (_ans, _input) => {
+          _input = _input || '';
+          return new Promise(_res => _res(fileList.filter(_n => _n.toLowerCase().indexOf(_input) > -1)));
+      	}
     }]).then(_d => {
         let tcName = _d.tcName;
         if (tcName == "All") {
