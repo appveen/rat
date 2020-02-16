@@ -49,7 +49,7 @@
             "name": "Delete data",
             "request": {
                 "method": "DELETE",
-                "url": "/data/{{dataPipe['sampleTest01.json'].data._id}}",
+                "url": "/data/{{dataPipe.read('sampleTest01.json').data._id}}",
                 "headers": {
                     "token": "{{loginResponse.token}}"
                 },
@@ -66,7 +66,7 @@
             "name": "Fetch data with ID after DELETE",
             "request": {
                 "method": "GET",
-                "url": "/data/{{dataPipe['sampleTest01.json'].data._id}}",
+                "url": "/data/{{dataPipe.read('sampleTest01.json').data._id}}",
                 "headers": {
                     "token": "{{loginResponse.token}}"
                 },
