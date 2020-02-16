@@ -1,6 +1,6 @@
 {
     "name": "@appveen/rat",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "description": "ReST API Tester",
     "main": "./bin/rat.js",
     "scripts": {
