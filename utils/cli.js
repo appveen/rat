@@ -58,7 +58,7 @@ e.init = () => {
         fs.writeFileSync(testFileName02, sampleTestCase02.toString());
     }
     new buffer.Buffer(execSync("npm init -y"));
-    new buffer.Buffer(execSync("npm i log4js chai mocha request request-promise faker"));
+    new buffer.Buffer(execSync("npm i log4js chai mocha request request-promise"));
     console.log("Done!");
     process.exit();
 };

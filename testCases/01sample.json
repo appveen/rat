@@ -55,7 +55,7 @@
                 "url": "/login",
                 "payload": {
                     "username": "alice123",
-                    "password": "{{faker.internet.password()}}"
+                    "password": "123123123123"
                 },
                 "responseCode": 400
             },
