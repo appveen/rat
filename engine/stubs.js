@@ -260,9 +260,10 @@ e.test = function(tcFile, tc) {
         generateAssertions(expectedResponse, locationOfResponse);
         if (response.list) _tc += `let check = checkInList(res.${locationOfResponse}, ${JSON.stringify(response.list)});expect(check, "Check data in list failed!").to.be.equal(true);`
     }
-    if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
+  /*  if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
     // wait or waitFor
-    else if (tc.waitFor) {
+    else */
+    if (tc.waitFor) {
         let timeout = 10;
         if (tc.waitFor.timeout) timeout = tc.waitFor.timeout;
         _tc += "var d = new Date();d.setSeconds(d.getSeconds() + " + timeout + ");"
