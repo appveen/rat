@@ -11,7 +11,8 @@ e.initTestSuite = function(_suitName, _url) {
     _tc = "";
     _tc += "var expect = require('chai').expect;var assert = require('chai').assert;";
     _url.forEach((_url, _i) => {
-        _tc += "var url" + (_i + 1) + " = process.env.URL1 ? process.env.URL1 : '" + _url + "';";
+        // _tc += "var url" + (_i + 1) + " = process.env.URL1 ? process.env.URL1 : '" + _url + "';";
+        _tc += `var url${(_i + 1)} = process.env.URL${(_i + 1)} ? process.env.URL${(_i + 1)} : "${_url}";`;
     });
     _tc += "describe('" + _suitName + "', function () {";
 };
@@ -229,7 +230,8 @@ e.test = function(tcFile, tc) {
     if(body) _tc += `"body": _payload,`
     if(qs) _tc += `"qs": ${parseData(JSON.stringify(qs))},`
     _tc += `"json": true,`
-    _tc += `"resolveWithFullResponse": true`
+    _tc += `"resolveWithFullResponse": true,`
+    _tc += `"timeout": ${(tc.wait * 1000)},`
     _tc +=`})`
 
     let locationOfResponse = "body"
@@ -260,7 +262,7 @@ e.test = function(tcFile, tc) {
         generateAssertions(expectedResponse, locationOfResponse);
         if (response.list) _tc += `let check = checkInList(res.${locationOfResponse}, ${JSON.stringify(response.list)});expect(check, "Check data in list failed!").to.be.equal(true);`
     }
-    if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
+    // if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
     // wait or waitFor
     else if (tc.waitFor) {
         let timeout = 10;
