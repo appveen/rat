@@ -9,7 +9,7 @@ var delimiters = ["{{", "}}"];
 
 e.initTestSuite = function(_suitName, _url) {
     _tc = "";
-    _tc += "var expect = require('chai').expect;var assert = require('chai').assert;";
+    _tc += "var expect = import('chai').expect;var assert = import('chai').assert;";
     _url.forEach((_url, _i) => {
         // _tc += "var url" + (_i + 1) + " = process.env.URL1 ? process.env.URL1 : '" + _url + "';";
         _tc += `var url${(_i + 1)} = process.env.URL${(_i + 1)} ? process.env.URL${(_i + 1)} : "${_url}";`;
