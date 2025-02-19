@@ -9,7 +9,7 @@ var delimiters = ["{{", "}}"];
 
 e.initTestSuite = function(_suitName, _url) {
     _tc = "";
-    _tc += "var expect = import('chai').expect;var assert = import('chai').assert;";
+    _tc += "var expect = chai.expect;var assert = chai.assert;";
     _url.forEach((_url, _i) => {
         // _tc += "var url" + (_i + 1) + " = process.env.URL1 ? process.env.URL1 : '" + _url + "';";
         _tc += `var url${(_i + 1)} = process.env.URL${(_i + 1)} ? process.env.URL${(_i + 1)} : "${_url}";`;
@@ -262,7 +262,7 @@ e.test = function(tcFile, tc) {
         generateAssertions(expectedResponse, locationOfResponse);
         if (response.list) _tc += `let check = checkInList(res.${locationOfResponse}, ${JSON.stringify(response.list)});expect(check, "Check data in list failed!").to.be.equal(true);`
     }
-    // if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
+    if (tc.wait) _tc += "setTimeout(() => {logger.info('" + name + " :: PASS'); done();}, " + (tc.wait * 1000) + ");";
     // wait or waitFor
     else if (tc.waitFor) {
         let timeout = 10;
@@ -308,7 +308,7 @@ e.generate = function(_f, _stopOnError) {
     let suffix = _f.split(".")[0] + ".js";
     let opt = path.join(process.cwd(), "generatedTests", suffix);
     var opf = "generatedTests/" + suffix;
-    let tc = "const log4js = require('log4js'); const request = require('request-promise');";
+    let tc = "const log4js = require('log4js'); const request = require('request-promise'); const chai = require('chai');";
     tc += "const fs = require('fs'); const path = require('path');"
     tc += "if (!fs.existsSync('data')) fs.mkdirSync('data'); "
     tc += "function getDateTime() {var sd = new Date();var syear = sd.getFullYear();var smonth = ('0' + (sd.getMonth() + 1)).slice(-2);var sdate = ('0' + sd.getDate()).slice(-2);var shours = ('0' + sd.getHours()).slice(-2);var sminutes = ('0' + sd.getMinutes()).slice(-2);var sseconds = ('0' + sd.getSeconds()).slice(-2);var startDate = syear + '-' + smonth + '-' + sdate;var startTime = shours + '-' + sminutes + '-' + sseconds;return startDate + '_' + startTime;}; function waitForInAPI(_option, _key, _value, _till){if(_till > (new Date())){return request(_option).then(_d => {if (JSON.parse(_d)[_key] == _value) return true;else {return new Promise(_resolve => {setTimeout(()=> _resolve(waitForInAPI(_option, _key, _value, _till)),500);});}}, _e => {return false});} else return false;}; function checkInList(_list, _values) {let flag = false;_list.forEach(_e => {let innerFlag = true;for (_k in _values) {innerFlag = innerFlag && (_e[_k] == _values[_k]);};if (innerFlag) flag = true;});return flag;}; log4js.configure({ appenders: { file: { type: 'file', filename: 'Log_'+getDateTime()+'_" + _f + ".log' } }, categories: { default: { appenders: ['file'], level: 'info' } }});const logger = log4js.getLogger('[" + _f + "]');";
